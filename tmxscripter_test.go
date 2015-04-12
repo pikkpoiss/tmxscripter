@@ -96,10 +96,12 @@ func runTest(js string, layer string, expected []uint32) (err error) {
 	ids = getGridIds(grid)
 	if len(ids) != len(expected) {
 		err = fmt.Errorf("IDs didn't match! expected: %v, got %v", expected, ids)
+		return
 	}
 	for i := 0; i < len(ids); i++ {
 		if ids[i] != expected[i] {
 			err = fmt.Errorf("No match at index %v! expected: %v, got %v", i, expected[i], ids[i])
+			return
 		}
 	}
 	return
@@ -136,6 +138,30 @@ func TestNoop(t *testing.T) {
 		1, 0, 0,
 		0, 1, 0,
 		0, 0, 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPlusOne(t *testing.T) {
+	if err := runTest(`
+		// This script adds one to each tile Id.
+		addEventListener("map", function(m) {
+			var layer = m.GetLayer("layer1"),
+			    grid = layer.GetGrid(),
+			    tile;
+			for (var y = 0; y < grid.Height(); y++) {
+				for (var x = 0; x < grid.Width(); x++) {
+					tile = grid.TileAt(x, y);
+					tile.Id += 1;
+				}
+			}
+			grid.Save();
+		});
+	`, "layer1", []uint32{
+		2, 1, 1,
+		1, 2, 1,
+		1, 1, 2,
 	}); err != nil {
 		t.Fatal(err)
 	}

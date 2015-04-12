@@ -91,6 +91,41 @@ func (s *TmxScripter) loadScript() (err error) {
 	return
 }
 
+func (s *TmxScripter) convertArgs(args []interface{}) (converted []interface{}, err error) {
+	var (
+		i   int
+		arg interface{}
+	)
+	converted = make([]interface{}, len(args))
+	for i, arg = range args {
+		if converted[i], err = s.vm.ToValue(arg); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (s *TmxScripter) triggerEvent(eventName string, rawArgs ...interface{}) (err error) {
+	var (
+		present   bool
+		callbacks []otto.Value
+		callback  otto.Value
+		arguments []interface{}
+	)
+	if callbacks, present = s.listeners[eventName]; !present {
+		return // Not an error to have no listeners.
+	}
+	if arguments, err = s.convertArgs(rawArgs); err != nil {
+		return
+	}
+	for _, callback = range callbacks {
+		if _, err = callback.Call(callback, arguments...); err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (s *TmxScripter) loadMap() (m *tmxgo.Map, err error) {
 	var (
 		f         fauxfile.File
@@ -141,6 +176,9 @@ func (s *TmxScripter) Run() (err error) {
 		return
 	}
 	if err = s.loadScript(); err != nil {
+		return
+	}
+	if err = s.triggerEvent("map", NewScriptableMap(m)); err != nil {
 		return
 	}
 	if err = s.saveMap(m); err != nil {
