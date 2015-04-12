@@ -19,6 +19,7 @@ import (
 	"github.com/kurrik/fauxfile"
 	"github.com/kurrik/tmxgo"
 	"github.com/robertkrimen/otto"
+	_ "github.com/robertkrimen/otto/underscore"
 	"io/ioutil"
 	"path"
 )

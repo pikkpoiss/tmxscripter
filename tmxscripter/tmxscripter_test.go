@@ -230,6 +230,26 @@ func TestPlusOne(t *testing.T) {
 	}
 }
 
+func TestPlusOneMap(t *testing.T) {
+	if err := runTest(`
+		// This script adds one to each tile Id using underscore's map.
+		addEventListener("map", function(m) {
+			var layer = m.GetLayer("layer1"),
+			    grid = layer.GetGrid();
+			_.map(grid.TileList(), function(tile) {
+				tile.Id += 1;
+			});
+			grid.Save();
+		});
+	`, "layer1", []uint32{
+		2, 1, 1,
+		1, 2, 1,
+		1, 1, 2,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAddLayer(t *testing.T) {
 	if err := runTest(`
 		// This script adds a new layer to the map.

@@ -117,6 +117,17 @@ func (g *ScriptableGrid) TileAt(x int, y int) *ScriptableTile {
 	return NewScriptableTile(&g.Tiles[x][y])
 }
 
+// Returns a linear array of tiles.
+func (g *ScriptableGrid) TileList() []*ScriptableTile {
+	var tiles = make([]*ScriptableTile, g.DataTileGrid.Width*g.DataTileGrid.Height)
+	for y := 0; y < g.DataTileGrid.Height; y++ {
+		for x := 0; x < g.DataTileGrid.Width; x++ {
+			tiles[y*g.DataTileGrid.Width+x] = NewScriptableTile(&g.Tiles[x][y])
+		}
+	}
+	return tiles
+}
+
 // Represents a tile object.  Has Id, FlipX, FlipY and FlipD attributes.
 type ScriptableTile struct {
 	*tmxgo.DataTileGridTile

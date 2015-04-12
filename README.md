@@ -54,6 +54,8 @@ A few convenience methods have been added to the global scope.
         
         data = JSON.parse(readFile("relative/path/to/data.json"))
 
+[Underscore](http://underscorejs.org/) has been included automatically.
+
 Most Tiled entities are wrapped for easier scripting.  Methods available on wrapped objects are available at the [class documentation](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter).  Following are some of the core classes and methods and their intended use.  Consult the godoc for the most up-to-date information.
 
 A [Map](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableMap) represents an entire Tiled map.
@@ -67,6 +69,7 @@ A [Grid](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableG
   * `Height()` Returns the height of the grid in tiles.
   * `Width()` Returns the width of the grid in tiles.
   * `TileAt(x, y)` Returns a tile at the given coordinates.
+  * `TileList()` Returns a linear array of tiles, convenient for using underscore's map function.
   * `Save()` Must be called to persist changes to the grid back to the layer.
 
 A [Tile](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableTile) represents a single tile entity
