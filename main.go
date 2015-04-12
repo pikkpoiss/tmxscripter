@@ -15,10 +15,10 @@
 package main
 
 import (
-	"./tmxscripter"
 	"flag"
 	"fmt"
 	"github.com/kurrik/fauxfile"
+	"github.com/kurrik/tmxscripter"
 	"os"
 )
 

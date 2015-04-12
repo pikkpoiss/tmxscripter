@@ -9,7 +9,7 @@ The purpose of tmxscripter is to allow for procedural modifications to a Tiled m
 
 ## Installation
 
-    go get -u github.com/kurrik/autoslice
+    go get -u github.com/kurrik/tmxscripter
 
 ## Running
 
