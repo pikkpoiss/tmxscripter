@@ -146,5 +146,5 @@ func (s *TmxScripter) Run() (err error) {
 	if err = s.saveMap(m); err != nil {
 		return
 	}
-	return fmt.Errorf("Not implemented")
+	return
 }

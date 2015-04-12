@@ -37,6 +37,16 @@ func getGrid(input string, layer string) (output tmxgo.DataTileGrid, err error) 
 	return
 }
 
+func getGridIds(grid tmxgo.DataTileGrid) (ids []uint32) {
+	ids = make([]uint32, grid.Width*grid.Height)
+	for y := 0; y < grid.Height; y++ {
+		for x := 0; x < grid.Width; x++ {
+			ids[y*grid.Width+x] = grid.Tiles[x][y].Id
+		}
+	}
+	return
+}
+
 func script(input, script string) (output string, err error) {
 	var (
 		byteOutput []byte
@@ -48,31 +58,50 @@ func script(input, script string) (output string, err error) {
 	scripter.OutputPath = "./modified.tmx"
 	scripter.ScriptPath = "./script.js"
 	if f, err = fs.Create(scripter.InputPath); err != nil {
-		err = fmt.Errorf("Could not create input file: %v", err)
 		return
 	}
 	f.Write([]byte(input))
 	f.Close()
 	if f, err = fs.Create(scripter.ScriptPath); err != nil {
-		err = fmt.Errorf("Could not create script file: %v", err)
 		return
 	}
 	f.Write([]byte(script))
 	f.Close()
 	if err = scripter.Run(); err != nil {
-		err = fmt.Errorf("Error when running scripter: %s", err)
 		return
 	}
 	if f, err = fs.Open(scripter.OutputPath); err != nil {
-		err = fmt.Errorf("Could not open output file: %v", err)
 		return
 	}
 	defer f.Close()
 	if byteOutput, err = ioutil.ReadAll(f); err != nil {
-		err = fmt.Errorf("Could not read output file: %v", err)
 		return
 	}
 	output = string(byteOutput)
+	return
+}
+
+func runTest(js string, layer string, expected []uint32) (err error) {
+	var (
+		result string
+		grid   tmxgo.DataTileGrid
+		ids    []uint32
+	)
+	if result, err = script(TEST_MAP, js); err != nil {
+		return
+	}
+	if grid, err = getGrid(result, layer); err != nil {
+		return
+	}
+	ids = getGridIds(grid)
+	if len(ids) != len(expected) {
+		err = fmt.Errorf("IDs didn't match! expected: %v, got %v", expected, ids)
+	}
+	for i := 0; i < len(ids); i++ {
+		if ids[i] != expected[i] {
+			err = fmt.Errorf("No match at index %v! expected: %v, got %v", i, expected[i], ids[i])
+		}
+	}
 	return
 }
 
@@ -100,19 +129,14 @@ const TEST_MAP = `
 </map>
 `
 
-func TestRun(t *testing.T) {
-	var (
-		result string
-		grid   tmxgo.DataTileGrid
-		err    error
-	)
-	if result, err = script(TEST_MAP, `
-		console.log('foo');
-	`); err != nil {
-		t.Fatalf("Problem running script: %v", err)
+func TestNoop(t *testing.T) {
+	if err := runTest(`
+		// This script does nothing.
+	`, "layer1", []uint32{
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1,
+	}); err != nil {
+		t.Fatal(err)
 	}
-	if grid, err = getGrid(result, "layer1"); err != nil {
-		t.Fatalf("Problem getting grid: %v", err)
-	}
-	fmt.Printf("Got grid: %v\n", grid)
 }
