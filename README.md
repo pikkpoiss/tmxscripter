@@ -54,6 +54,10 @@ A few convenience methods have been added to the global scope.
         
         data = JSON.parse(readFile("relative/path/to/data.json"))
 
+ * `writeFile(path, data)` Attempts to write `data` string into a file located at `path` synchronously.  `path` is relative to the script file's location.  Example:
+        
+        data = writeFile("relative/path/to/output.json", JSON.stringify(data))
+
 [Underscore](http://underscorejs.org/) has been included automatically.
 
 Most Tiled entities are wrapped for easier scripting.  Methods available on wrapped objects are available at the [class documentation](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter).  Following are some of the core classes and methods and their intended use.  Consult the godoc for the most up-to-date information.

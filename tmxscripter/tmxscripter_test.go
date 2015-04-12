@@ -73,11 +73,9 @@ func readFile(fs fauxfile.Filesystem, path string) (contents string, err error) 
 	return
 }
 
-func script(input, script, data string) (output string, err error) {
-	var (
-		fs       = fauxfile.NewMockFilesystem()
-		scripter = NewTmxScripter(fs)
-	)
+func script(input, script, data string) (output string, fs fauxfile.Filesystem, err error) {
+	fs = fauxfile.NewMockFilesystem()
+	var scripter = NewTmxScripter(fs)
 	scripter.InputPath = "./foo/map.tmx"
 	scripter.OutputPath = "./foo/modified.tmx"
 	scripter.ScriptPath = "./foo/script.js"
@@ -102,13 +100,13 @@ func script(input, script, data string) (output string, err error) {
 	return
 }
 
-func runTest(js, layer string, expected []uint32) (err error) {
+func runTest(js, layer string, expected []uint32) (fs fauxfile.Filesystem, err error) {
 	var (
 		result string
 		grid   tmxgo.DataTileGrid
 		ids    []uint32
 	)
-	if result, err = script(TEST_MAP, js, TEST_DATA); err != nil {
+	if result, fs, err = script(TEST_MAP, js, TEST_DATA); err != nil {
 		return
 	}
 	if grid, err = getGrid(result, layer); err != nil {
@@ -195,7 +193,7 @@ func TestValidateScriptPath(t *testing.T) {
 }
 
 func TestNoop(t *testing.T) {
-	if err := runTest(`
+	if _, err := runTest(`
 		// This script does nothing.
 	`, "layer1", []uint32{
 		1, 0, 0,
@@ -207,7 +205,7 @@ func TestNoop(t *testing.T) {
 }
 
 func TestPlusOne(t *testing.T) {
-	if err := runTest(`
+	if _, err := runTest(`
 		// This script adds one to each tile Id.
 		addEventListener("map", function(m) {
 			var layer = m.GetLayer("layer1"),
@@ -231,7 +229,7 @@ func TestPlusOne(t *testing.T) {
 }
 
 func TestPlusOneMap(t *testing.T) {
-	if err := runTest(`
+	if _, err := runTest(`
 		// This script adds one to each tile Id using underscore's map.
 		addEventListener("map", function(m) {
 			var layer = m.GetLayer("layer1"),
@@ -251,7 +249,7 @@ func TestPlusOneMap(t *testing.T) {
 }
 
 func TestAddLayer(t *testing.T) {
-	if err := runTest(`
+	if _, err := runTest(`
 		// This script adds a new layer to the map.
 		addEventListener("map", function(m) {
 			var layer = m.AddLayer("layer2"),
@@ -269,8 +267,8 @@ func TestAddLayer(t *testing.T) {
 	}
 }
 
-func TestReadData(t *testing.T) {
-	if err := runTest(`
+func TestReadFile(t *testing.T) {
+	if _, err := runTest(`
 		// This script reads a data file and uses it to adjust a layer.
 		addEventListener("map", function(m) {
 			var layer = m.GetLayer("layer1"),
@@ -290,5 +288,38 @@ func TestReadData(t *testing.T) {
 		20, 20, 20,
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestWriteFile(t *testing.T) {
+	var (
+		output   string
+		expected string = "[1,0,0,0,1,0,0,0,1]"
+		fs       fauxfile.Filesystem
+		err      error
+	)
+	if fs, err = runTest(`
+		// This script writes a list of tile IDs to a file.
+		addEventListener("map", function(m) {
+			var layer = m.GetLayer("layer1"),
+			    grid = layer.GetGrid(),
+			    data;
+			data = _.map(grid.TileList(), function(tile) {
+				return tile.Id;
+			});
+			writeFile("bar/output.json", JSON.stringify(data));
+		});
+	`, "layer1", []uint32{
+		1, 0, 0,
+		0, 1, 0,
+		0, 0, 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if output, err = readFile(fs, "./foo/bar/output.json"); err != nil {
+		t.Fatal(err)
+	}
+	if output != expected {
+		t.Fatalf("Data file invalid. Got: '%v' Expected: '%v'", output, expected)
 	}
 }

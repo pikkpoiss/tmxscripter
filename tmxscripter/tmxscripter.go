@@ -92,6 +92,32 @@ func (s *TmxScripter) setAPI() {
 		}
 		return response
 	})
+	s.vm.Set("writeFile", func(call otto.FunctionCall) otto.Value {
+		var usage = fmt.Errorf("Usage: writeFile(path, data)")
+		if len(call.ArgumentList) != 2 {
+			panic(usage)
+		}
+		if !call.Argument(0).IsString() {
+			panic(usage)
+		}
+		if !call.Argument(1).IsString() {
+			panic(usage)
+		}
+		var (
+			f        fauxfile.File
+			err      error
+			filePath = call.Argument(0).String()
+			fullPath = path.Join(path.Dir(s.ScriptPath), filePath)
+		)
+		if f, err = s.fs.Create(fullPath); err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		if _, err = f.Write([]byte(call.Argument(1).String())); err != nil {
+			panic(err)
+		}
+		return otto.NullValue()
+	})
 }
 
 func (s *TmxScripter) loadScript() (err error) {
