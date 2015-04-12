@@ -20,6 +20,7 @@ import (
 	"github.com/kurrik/tmxgo"
 	"github.com/robertkrimen/otto"
 	"io/ioutil"
+	"path"
 )
 
 type TmxScripter struct {
@@ -40,16 +41,16 @@ func NewTmxScripter(fs fauxfile.Filesystem) *TmxScripter {
 }
 
 func (s *TmxScripter) setAPI() {
-	var err = fmt.Errorf("Usage: addEventListener(string, func)")
 	s.vm.Set("addEventListener", func(call otto.FunctionCall) otto.Value {
+		var usage = fmt.Errorf("Usage: addEventListener(string, func)")
 		if len(call.ArgumentList) != 2 {
-			panic(err)
+			panic(usage)
 		}
 		if !call.Argument(0).IsString() {
-			panic(err)
+			panic(usage)
 		}
 		if !call.Argument(1).IsFunction() {
-			panic(err)
+			panic(usage)
 		}
 		var (
 			callbacks []otto.Value
@@ -60,7 +61,35 @@ func (s *TmxScripter) setAPI() {
 			s.listeners[eventName] = callbacks
 		}
 		s.listeners[eventName] = append(s.listeners[eventName], call.Argument(1))
-		return otto.Value{}
+		return otto.NullValue()
+	})
+	s.vm.Set("readFile", func(call otto.FunctionCall) otto.Value {
+		var usage = fmt.Errorf("Usage: readFile(path)")
+		if len(call.ArgumentList) != 1 {
+			panic(usage)
+		}
+		if !call.Argument(0).IsString() {
+			panic(usage)
+		}
+		var (
+			f         fauxfile.File
+			fileBytes []byte
+			err       error
+			filePath  = call.Argument(0).String()
+			fullPath  = path.Join(path.Dir(s.ScriptPath), filePath)
+			response  otto.Value
+		)
+		if f, err = s.fs.Open(fullPath); err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		if fileBytes, err = ioutil.ReadAll(f); err != nil {
+			panic(err)
+		}
+		if response, err = otto.ToValue(string(fileBytes)); err != nil {
+			panic(err)
+		}
+		return response
 	})
 }
 

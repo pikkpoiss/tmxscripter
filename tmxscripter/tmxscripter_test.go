@@ -73,18 +73,24 @@ func readFile(fs fauxfile.Filesystem, path string) (contents string, err error) 
 	return
 }
 
-func script(input, script string) (output string, err error) {
+func script(input, script, data string) (output string, err error) {
 	var (
 		fs       = fauxfile.NewMockFilesystem()
 		scripter = NewTmxScripter(fs)
 	)
-	scripter.InputPath = "./map.tmx"
-	scripter.OutputPath = "./modified.tmx"
-	scripter.ScriptPath = "./script.js"
+	scripter.InputPath = "./foo/map.tmx"
+	scripter.OutputPath = "./foo/modified.tmx"
+	scripter.ScriptPath = "./foo/script.js"
+	if err = fs.MkdirAll("./foo/bar", 0755); err != nil {
+		return
+	}
 	if err = writeFile(fs, scripter.InputPath, input); err != nil {
 		return
 	}
 	if err = writeFile(fs, scripter.ScriptPath, script); err != nil {
+		return
+	}
+	if err = writeFile(fs, "./foo/bar/data.json", data); err != nil {
 		return
 	}
 	if err = scripter.Run(); err != nil {
@@ -96,13 +102,13 @@ func script(input, script string) (output string, err error) {
 	return
 }
 
-func runTest(js string, layer string, expected []uint32) (err error) {
+func runTest(js, layer string, expected []uint32) (err error) {
 	var (
 		result string
 		grid   tmxgo.DataTileGrid
 		ids    []uint32
 	)
-	if result, err = script(TEST_MAP, js); err != nil {
+	if result, err = script(TEST_MAP, js, TEST_DATA); err != nil {
 		return
 	}
 	if grid, err = getGrid(result, layer); err != nil {
@@ -121,6 +127,12 @@ func runTest(js string, layer string, expected []uint32) (err error) {
 	}
 	return
 }
+
+const TEST_DATA = `
+{
+  "aString": "bar",
+  "aNumber": 20
+}`
 
 const TEST_MAP = `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -237,3 +249,26 @@ func TestAddLayer(t *testing.T) {
 	}
 }
 
+func TestReadData(t *testing.T) {
+	if err := runTest(`
+		// This script reads a data file and uses it to adjust a layer.
+		addEventListener("map", function(m) {
+			var layer = m.GetLayer("layer1"),
+			    grid = layer.GetGrid(),
+			    data = JSON.parse(readFile("bar/data.json")),
+			    tile;
+			for (var y = 0; y < grid.Height(); y++) {
+				for (var x = 0; x < grid.Width(); x++) {
+					grid.TileAt(x, y).Id = data.aNumber;
+				}
+			}
+			grid.Save();
+		});
+	`, "layer1", []uint32{
+		20, 20, 20,
+		20, 20, 20,
+		20, 20, 20,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
