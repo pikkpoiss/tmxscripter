@@ -18,7 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kurrik/fauxfile"
-	"github.com/kurrik/tmxscripter"
+	"github.com/kurrik/tmxscripter/tmxscripter"
 	"os"
 )
 
