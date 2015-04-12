@@ -38,17 +38,20 @@ Here is a simple script which adds `1` to the ID of any tile in the map:
 
 ### Events
 
-|Name| Arguments|Description|
-|-|-|-|
-|map|[Map](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableMap)|Called when the map is loaded and ready to be modified|
+Name | Arguments | Description
+---- | --------- | -----------
+map  | [Map](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableMap) | Called when the map is loaded and ready to be modified
 
 ### Javascript API
 
 A few convenience methods have been added to the global scope.
 
  * `addEventListener(name, callback)` Calls the `callback` function when an event with name `name` is fired. Example:
+        
         addEventListener("foo", function(data) {...});
+
  * `readFile(path)` Attempts to read the contents of the file at `path` synchronously and return it as a string.  `path` is relative to the script file's location.  Example:
+        
         data = JSON.parse(readFile("relative/path/to/data.json"))
 
 Most Tiled entities are wrapped for easier scripting.  Methods available on wrapped objects are available at the [class documentation](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter).  Following are some of the core classes and methods and their intended use.  Consult the godoc for the most up-to-date information.
