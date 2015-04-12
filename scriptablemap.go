@@ -28,6 +28,7 @@ func NewScriptableMap(m *tmxgo.Map) *ScriptableMap {
 	}
 }
 
+// Returns a layer with the given name if one exists.
 func (m *ScriptableMap) GetLayer(name string) *ScriptableLayer {
 	if l, err := m.LayerByName(name); err != nil {
 		return nil
@@ -46,12 +47,9 @@ func NewScriptableLayer(l *tmxgo.Layer) *ScriptableLayer {
 	}
 }
 
+// Returns a scriptable grid for this layer.
 func (l *ScriptableLayer) GetGrid() *ScriptableGrid {
 	return NewScriptableGrid(l.Layer)
-}
-
-func (l *ScriptableLayer) SetGrid(grid *tmxgo.DataTileGrid) {
-	panic("Call .Save() on grid instead")
 }
 
 type ScriptableGrid struct {
@@ -70,22 +68,27 @@ func NewScriptableGrid(l *tmxgo.Layer) *ScriptableGrid {
 	}
 }
 
+// Returns the width of the grid in tiles.
 func (g *ScriptableGrid) Width() int {
 	return g.DataTileGrid.Width
 }
 
+// Returns the height of the grid in tiles.
 func (g *ScriptableGrid) Height() int {
 	return g.DataTileGrid.Height
 }
 
+// Saves the grid back into the layer.
 func (g *ScriptableGrid) Save() {
 	g.Layer.SetGrid(*g.DataTileGrid)
 }
 
+// Returns the tile at the specified location.
 func (g *ScriptableGrid) TileAt(x int, y int) *ScriptableTile {
 	return NewScriptableTile(&g.Tiles[x][y])
 }
 
+// Represents a tile object.  Has Id, FlipX, FlipY and FlipD attributes.
 type ScriptableTile struct {
 	*tmxgo.DataTileGridTile
 }
