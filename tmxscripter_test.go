@@ -39,10 +39,10 @@ func getGrid(input string, layer string) (output tmxgo.DataTileGrid, err error) 
 
 func script(input, script string) (output string, err error) {
 	var (
-		scripter   TmxScripter
 		byteOutput []byte
-		fs         = fauxfile.NewMockFilesystem()
 		f          fauxfile.File
+		fs         = fauxfile.NewMockFilesystem()
+		scripter   = NewTmxScripter(fs)
 	)
 	scripter.InputPath = "./map.tmx"
 	scripter.OutputPath = "./modified.tmx"

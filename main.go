@@ -17,13 +17,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kurrik/fauxfile"
 	"os"
 )
 
 func main() {
 	var (
 		err      error
-		scripter TmxScripter
+		scripter *TmxScripter = NewTmxScripter(&fauxfile.RealFilesystem{})
 	)
 	flag.StringVar(&scripter.InputPath, "input", "", "Input path")
 	flag.StringVar(&scripter.OutputPath, "output", "", "Output path")
