@@ -44,10 +44,15 @@ Here is a simple script which adds `1` to the ID of any tile in the map:
 
 ### Javascript API
 
+A few convenience methods have been added to the global scope.
+
+ * `addEventListener(name, callback)` Calls the `callback` function when an event with name `name` is fired.
+
 Most Tiled entities are wrapped for easier scripting.  Methods available on wrapped objects are available at the [class documentation](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter).  Following are some of the core classes and methods and their intended use.  Consult the godoc for the most up-to-date information.
 
 A [Map](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableMap) represents an entire Tiled map.
  * `GetLayer(name)` Returns the layer matching the given name.
+ * `AddLayer(name)` Creates a new layer with the given name, initialized to 0s.
 
 A [Layer](https://godoc.org/github.com/kurrik/tmxscripter/tmxscripter#ScriptableLayer) represents a single layer.
   * `GetGrid()` Returns an object representing the 2D tile array.
