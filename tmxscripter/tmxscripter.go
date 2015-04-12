@@ -168,10 +168,23 @@ func (s *TmxScripter) saveMap(m *tmxgo.Map) (err error) {
 	return
 }
 
+func (s *TmxScripter) Validate() (err error) {
+	if _, err = s.fs.Stat(s.InputPath); err != nil {
+		return fmt.Errorf("Input file %v does not exist", s.InputPath)
+	}
+	if _, err = s.fs.Stat(s.ScriptPath); err != nil {
+		return fmt.Errorf("Script file %v does not exist", s.ScriptPath)
+	}
+	return
+}
+
 func (s *TmxScripter) Run() (err error) {
 	var (
 		m *tmxgo.Map
 	)
+	if err = s.Validate(); err != nil {
+		return
+	}
 	if m, err = s.loadMap(); err != nil {
 		return
 	}

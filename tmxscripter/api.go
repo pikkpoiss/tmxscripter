@@ -37,6 +37,35 @@ func (m *ScriptableMap) GetLayer(name string) *ScriptableLayer {
 	}
 }
 
+// Adds a new layer with the given name to the map. Tile IDs will be 0.
+func (m *ScriptableMap) AddLayer(name string) *ScriptableLayer {
+	var grid = tmxgo.DataTileGrid{
+		Width:  int(m.Width),
+		Height: int(m.Height),
+		Tiles:  make([][]tmxgo.DataTileGridTile, m.Width),
+	}
+	for x := 0; x < int(m.Width); x++ {
+		grid.Tiles[x] = make([]tmxgo.DataTileGridTile, m.Height)
+		for y := 0; y < int(m.Height); y++ {
+			grid.Tiles[x][y] = tmxgo.DataTileGridTile{
+				Id:    0,
+				FlipX: false,
+				FlipY: false,
+				FlipD: false,
+			}
+		}
+	}
+	var layer = &tmxgo.Layer{
+		Name:   name,
+		Width:  m.Width,
+		Height: m.Height,
+		Data:   &tmxgo.Data{},
+	}
+	layer.SetGrid(grid)
+	m.Layers = append(m.Layers, layer)
+	return NewScriptableLayer(layer)
+}
+
 type ScriptableLayer struct {
 	*tmxgo.Layer
 }

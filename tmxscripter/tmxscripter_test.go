@@ -47,37 +47,52 @@ func getGridIds(grid tmxgo.DataTileGrid) (ids []uint32) {
 	return
 }
 
-func script(input, script string) (output string, err error) {
+func writeFile(fs fauxfile.Filesystem, path, contents string) (err error) {
+	var f fauxfile.File
+	if f, err = fs.Create(path); err != nil {
+		return
+	}
+	defer f.Close()
+	f.Write([]byte(contents))
+	return
+}
+
+func readFile(fs fauxfile.Filesystem, path string) (contents string, err error) {
 	var (
 		byteOutput []byte
 		f          fauxfile.File
-		fs         = fauxfile.NewMockFilesystem()
-		scripter   = NewTmxScripter(fs)
 	)
-	scripter.InputPath = "./map.tmx"
-	scripter.OutputPath = "./modified.tmx"
-	scripter.ScriptPath = "./script.js"
-	if f, err = fs.Create(scripter.InputPath); err != nil {
-		return
-	}
-	f.Write([]byte(input))
-	f.Close()
-	if f, err = fs.Create(scripter.ScriptPath); err != nil {
-		return
-	}
-	f.Write([]byte(script))
-	f.Close()
-	if err = scripter.Run(); err != nil {
-		return
-	}
-	if f, err = fs.Open(scripter.OutputPath); err != nil {
+	if f, err = fs.Open(path); err != nil {
 		return
 	}
 	defer f.Close()
 	if byteOutput, err = ioutil.ReadAll(f); err != nil {
 		return
 	}
-	output = string(byteOutput)
+	contents = string(byteOutput)
+	return
+}
+
+func script(input, script string) (output string, err error) {
+	var (
+		fs       = fauxfile.NewMockFilesystem()
+		scripter = NewTmxScripter(fs)
+	)
+	scripter.InputPath = "./map.tmx"
+	scripter.OutputPath = "./modified.tmx"
+	scripter.ScriptPath = "./script.js"
+	if err = writeFile(fs, scripter.InputPath, input); err != nil {
+		return
+	}
+	if err = writeFile(fs, scripter.ScriptPath, script); err != nil {
+		return
+	}
+	if err = scripter.Run(); err != nil {
+		return
+	}
+	if output, err = readFile(fs, scripter.OutputPath); err != nil {
+		return
+	}
 	return
 }
 
@@ -131,6 +146,42 @@ const TEST_MAP = `
 </map>
 `
 
+func TestValidateInputPath(t *testing.T) {
+	var (
+		fs       = fauxfile.NewMockFilesystem()
+		scripter = NewTmxScripter(fs)
+		err      error
+	)
+	scripter.InputPath = "./doesnotexist.tmx"
+	scripter.OutputPath = "./modified.tmx"
+	scripter.ScriptPath = "./script.js"
+	if err = writeFile(fs, scripter.ScriptPath, `console.log("foo");`); err != nil {
+		return
+	}
+	if err = scripter.Validate(); err == nil {
+		t.Fatalf("Expected error if input path doesn't exist")
+		return
+	}
+}
+
+func TestValidateScriptPath(t *testing.T) {
+	var (
+		fs       = fauxfile.NewMockFilesystem()
+		scripter = NewTmxScripter(fs)
+		err      error
+	)
+	scripter.InputPath = "./map.tmx"
+	scripter.OutputPath = "./modified.tmx"
+	scripter.ScriptPath = "./doesnotexist.js"
+	if err = writeFile(fs, scripter.InputPath, TEST_MAP); err != nil {
+		return
+	}
+	if err = scripter.Validate(); err == nil {
+		t.Fatalf("Expected error if script path doesn't exist")
+		return
+	}
+}
+
 func TestNoop(t *testing.T) {
 	if err := runTest(`
 		// This script does nothing.
@@ -166,3 +217,23 @@ func TestPlusOne(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAddLayer(t *testing.T) {
+	if err := runTest(`
+		// This script adds a new layer to the map.
+		addEventListener("map", function(m) {
+			var layer = m.AddLayer("layer2"),
+			    grid = layer.GetGrid(),
+			    tile;
+			grid.TileAt(1,1).Id = 1;
+			grid.Save();
+		});
+	`, "layer2", []uint32{
+		0, 0, 0,
+		0, 1, 0,
+		0, 0, 0,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
