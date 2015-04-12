@@ -15,6 +15,7 @@
 package main
 
 import (
+	"./tmxscripter"
 	"flag"
 	"fmt"
 	"github.com/kurrik/fauxfile"
@@ -24,7 +25,7 @@ import (
 func main() {
 	var (
 		err      error
-		scripter *TmxScripter = NewTmxScripter(&fauxfile.RealFilesystem{})
+		scripter = tmxscripter.NewTmxScripter(&fauxfile.RealFilesystem{})
 	)
 	flag.StringVar(&scripter.InputPath, "input", "", "Input path")
 	flag.StringVar(&scripter.OutputPath, "output", "", "Output path")
