@@ -3,3 +3,4 @@
 
 go get -u github.com/kurrik/fauxfile
 go get -u github.com/kurrik/tmxgo
+go get -u github.com/robertkrimen/otto

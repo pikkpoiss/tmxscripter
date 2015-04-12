@@ -18,11 +18,14 @@ import (
 	"fmt"
 	"github.com/kurrik/fauxfile"
 	"github.com/kurrik/tmxgo"
+	"github.com/robertkrimen/otto"
 	"io/ioutil"
 )
 
 type TmxScripter struct {
 	fs         fauxfile.Filesystem
+	vm         *otto.Otto
+	listeners  map[string][]otto.Value
 	InputPath  string
 	OutputPath string
 	ScriptPath string
@@ -30,8 +33,62 @@ type TmxScripter struct {
 
 func NewTmxScripter(fs fauxfile.Filesystem) *TmxScripter {
 	return &TmxScripter{
-		fs: fs,
+		fs:        fs,
+		vm:        otto.New(),
+		listeners: map[string][]otto.Value{},
 	}
+}
+
+func (s *TmxScripter) setAPI() {
+	var err = fmt.Errorf("Usage: addEventListener(string, func)")
+	s.vm.Set("addEventListener", func(call otto.FunctionCall) otto.Value {
+		if len(call.ArgumentList) != 2 {
+			panic(err)
+		}
+		if !call.Argument(0).IsString() {
+			panic(err)
+		}
+		if !call.Argument(1).IsFunction() {
+			panic(err)
+		}
+		var (
+			callbacks []otto.Value
+			present   bool
+			eventName = call.Argument(0).String()
+		)
+		if callbacks, present = s.listeners[eventName]; !present {
+			s.listeners[eventName] = callbacks
+		}
+		s.listeners[eventName] = append(s.listeners[eventName], call.Argument(1))
+		return otto.Value{}
+	})
+}
+
+func (s *TmxScripter) loadScript() (err error) {
+	var (
+		f          fauxfile.File
+		scriptFile []byte
+		script     *otto.Script
+	)
+	if f, err = s.fs.Open(s.ScriptPath); err != nil {
+		err = fmt.Errorf("Could not open script file: %v", err)
+		return
+	}
+	defer f.Close()
+	if scriptFile, err = ioutil.ReadAll(f); err != nil {
+		err = fmt.Errorf("Could not read script file: %v", err)
+		return
+	}
+	if script, err = s.vm.Compile("", string(scriptFile)); err != nil {
+		err = fmt.Errorf("Could not compile script: %v", err)
+		return
+	}
+	s.setAPI()
+	if _, err = s.vm.Run(script); err != nil {
+		err = fmt.Errorf("Could not execute script: %v", err)
+		return
+	}
+	return
 }
 
 func (s *TmxScripter) loadMap() (m *tmxgo.Map, err error) {
@@ -81,6 +138,9 @@ func (s *TmxScripter) Run() (err error) {
 		m *tmxgo.Map
 	)
 	if m, err = s.loadMap(); err != nil {
+		return
+	}
+	if err = s.loadScript(); err != nil {
 		return
 	}
 	if err = s.saveMap(m); err != nil {
