@@ -56,7 +56,7 @@ A few convenience methods have been added to the global scope.
 
  * `writeFile(path, data)` Attempts to write `data` string into a file located at `path` synchronously.  `path` is relative to the script file's location.  Example:
         
-        data = writeFile("relative/path/to/output.json", JSON.stringify(data))
+        writeFile("relative/path/to/output.json", JSON.stringify(data))
 
 [Underscore](http://underscorejs.org/) has been included automatically.
 
